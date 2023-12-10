@@ -1,0 +1,104 @@
+<canvas id="simulation" width="700" height="700"></canvas>
+
+<script>
+    var s_size = 700
+
+    var attractive_force_max_distance = 100
+    var energy_loss_coeff = 0.55
+
+    var screen = document.getElementById("simulation").getContext("2d")
+    var particlesArray = []
+
+    random = () => {
+        return Math.random()*(s_size-50) + 50
+    }
+
+    drawObjects = (x, y, color, size) => {
+        screen.fillStyle = color
+        screen.fillRect(x, y, size, size)
+    }
+
+    processParticles = (x, y, color) => {
+        return {
+            "x": x,
+            "y": y,
+            "vel_x": 0,
+            "vel_y": 0,
+            "color": color
+        }
+    }
+
+    createField = (num, color) => {
+        let field = []
+        for (let iter = 0; iter < num; iter++) {
+            field.push(processParticles(random(), random(), color))
+            particlesArray.push(field[iter])
+        }
+        return field
+    }
+
+    var electrons = createField(200, "blue")
+    var yellow = createField(200, "yellow")
+    var protons = createField(200, "red")
+
+    interations = (objType1, objType2, gravity) => {
+        for (let iter = 0; iter < objType1.length; iter++) {
+            force_ox = 0
+            force_oy = 0
+
+            for (let iter2 = 0; iter2 < objType2.length; iter2++){
+                a = objType1[iter]
+                b = objType2[iter2]
+
+                distance_ox = a.x - b.x
+                distance_oy = a.y - b.y
+                distance = Math.sqrt(distance_ox * distance_ox + distance_oy * distance_oy)
+            
+                if (distance > 0 && distance < attractive_force_max_distance) {
+                    NewtonForce = gravity * (1 / distance)
+                    force_ox += (NewtonForce * distance_ox)
+                    force_oy += (NewtonForce * distance_oy)
+                }
+            }
+
+            a.vel_x = (force_ox + a.vel_x) * energy_loss_coeff
+            a.vel_y = (force_oy + a.vel_y) * energy_loss_coeff
+            a.x += a.vel_x
+            a.y += a.vel_y
+            if (a.x <= 0 || a.x >= s_size){
+                a.vel_x *= -1
+                a.x += a.vel_x
+            }
+            if (a.y <= 0 || a.y >= s_size){
+                a.vel_y *= -1
+                a.y += a.vel_y
+            }
+        }
+    }
+
+    updateScreen = () => {
+        interations(electrons, electrons, 1)
+
+        interations(electrons, protons, -1)
+        interations(protons, electrons, -0.5)
+
+        interations(protons, protons, 0.5)
+        interations(protons, protons, -0.3)
+
+        interations(yellow, protons, 0.5)
+        interations(protons, yellow, -0.5)
+
+        interations(yellow, electrons, -0.2)
+        interations(electrons, yellow, 0.2)
+
+        screen.clearRect(0, 0, s_size, s_size)
+        drawObjects(0, 0, "black", s_size)
+        for (let iter = 0; iter < particlesArray.length; iter++) {
+            drawObjects(particlesArray[iter].x, particlesArray[iter].y, particlesArray[iter].color, 5)
+        }
+        requestAnimationFrame(updateScreen)
+    }
+
+    updateScreen()
+
+</script>
